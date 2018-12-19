@@ -11,6 +11,7 @@ namespace GraphHooperConnector {
         private GeocodingApi geoApi;
         private RoutingApi routeApi;
         private string apiKey;
+        private const string DEFAULT_BASE_URL = "https://graphhopper.com/api/1";
         //aditonal configurations
 
         bool? reverse { get; set; } = null;  // bool? | Set to true to do a reverse Geocoding request, see point parameter (optional) 
@@ -18,11 +19,11 @@ namespace GraphHooperConnector {
         private string locale = "en";  // string | The locale of the resulting turn instructions. E.g. `pt_PT` for Portuguese or `de` for German (optional) 
         private bool? instructions = true;  // bool? | If instruction should be calculated and returned (optional) 
         public string vehicle { get; set; } = "foot";  // string | The vehicle for which the route should be calculated. Other vehicles are foot, small_truck, ... (optional) 
-        private bool? elevation = true;  // bool? | If `true` a third dimension - the elevation - is included in the polyline or in the GeoJson. If enabled you have to use a modified version of the decoding method or set points_encoded to `false`. See the points_encoded attribute for more details. Additionally a request can fail if the vehicle does not support elevation. See the features object for every vehicle. (optional) 
+        private bool? elevation = false;  // bool? | If `true` a third dimension - the elevation - is included in the polyline or in the GeoJson. If enabled you have to use a modified version of the decoding method or set points_encoded to `false`. See the points_encoded attribute for more details. Additionally a request can fail if the vehicle does not support elevation. See the features object for every vehicle. (optional) 
         public bool? calcPoints { get; set; } = true;  // bool? | If the points for the route should be calculated at all printing out only distance and time. (optional) 
         List<string> pointHint = null; // List<string> | Optional parameter. Specifies a hint for each `point` parameter to prefer a certain street for the closest location lookup. E.g. if there is an address or house with two or more neighboring streets you can control for which street the closest location is looked up. (optional) 
         public bool? chDisable { get; } = true;  // bool? | Use this parameter in combination with one or more parameters of this table (optional) 
-        public string weighting { get; set; } = "fastest";  // string | Which kind of 'best' route calculation you need. Other option is `shortest` (e.g. for `vehicle=foot` or `bike`), `short_fastest` if time and distance is expensive e.g. for `vehicle=truck` (optional) 
+        public string weighting { get; set; } = "short_fastest";  // string | Which kind of 'best' route calculation you need. Other option is `shortest` (e.g. for `vehicle=foot` or `bike`), `short_fastest` if time and distance is expensive e.g. for `vehicle=truck` (optional) 
         public bool? edgeTraversal { get; set; } = null;  // bool? | Use `true` if you want to consider turn restrictions for bike and motor vehicles. Keep in mind that the response time is roughly 2 times slower. (optional) 
         private string algorithm = null;  // string | The algorithm to calculate the route. Other options are `dijkstra`, `astar`, `astarbi`, `alternative_route` and `round_trip` (optional) 
 
@@ -37,17 +38,17 @@ namespace GraphHooperConnector {
         private string avoid = null; // string | comma separate list to avoid certain roads. You can avoid motorway, ferry, tunnel or track (optional) 
 
         List<string> details = null; // List<string> | List of additional trip attributes to be returned. Try some of the following: `average_speed`, `street_name`, `edge_id`, `time`, `distance`. (optional) 
-
-        public GraphHooperConnectorImpl(string apiKey, Configuration config = null) {
+        const int RESULT_LIMIT = 1;
+        public GraphHooperConnectorImpl(string apiKey, string baseUrl = DEFAULT_BASE_URL) {
             this.apiKey = apiKey;
-            geoApi = new GeocodingApi();
-            routeApi = new RoutingApi();
+            //geocoding is not supported as part of graphhopper server: https://github.com/graphhopper/directions-api/issues/2
+            geoApi = new GeocodingApi(DEFAULT_BASE_URL);
+            routeApi = new RoutingApi(baseUrl);
 
         }
 
         public Coordinate getCoordiantes(string location) {
-            int limit = 1;
-            GeocodingResponse result = geoApi.GeocodeGet(apiKey, location, locale, limit,reverse);
+            GeocodingResponse result = geoApi.GeocodeGet(apiKey, location, locale, RESULT_LIMIT, reverse);
             Coordinate coordinate = new Coordinate();
             if (result != null && result.Hits.Count > 0) {
                 coordinate.latitude = result.Hits[0].Point.Lat;
@@ -57,13 +58,26 @@ namespace GraphHooperConnector {
             return coordinate;
         }
 
+        public async Task<Coordinate> getCoordiantesAsync(string location) {
+            GeocodingResponse result =await geoApi.GeocodeGetAsync(apiKey, location, locale, RESULT_LIMIT, reverse);
+            Coordinate coordinate = new Coordinate();
+            if (result != null && result.Hits.Count > 0) {
+                coordinate.latitude =  result.Hits[0].Point.Lat;
+                coordinate.longitude =  result.Hits[0].Point.Lng;
+            }
+            return coordinate;
+        }
+
 
         public RouteResponse getRouth(Coordinate src, Coordinate dest, int? azimuth = null) {
-            var points = new List<string>();
-            points.Add(src.ToString());
-            points.Add(dest.ToString());
+            var points = new List<string> { src.ToString(), dest.ToString() };
             RouteResponse result = routeApi.RouteGet(points, pointsEncoded, apiKey, locale, instructions, vehicle, elevation, calcPoints, pointHint, chDisable, weighting, edgeTraversal, algorithm, azimuth, headingPenalty, passThrough, details, roundTripDistance, roundTripSeed, alternativeRouteMaxPaths, alternativeRouteMaxWeightFactor, alternativeRouteMaxShareFactor, avoid?.ToString().ToLower());
             return result;
+        }
+
+        public async Task<RouteResponse> getRouthAsync(Coordinate src, Coordinate dest, int? azimuth = null) {
+            var points = new List<string> { src.ToString(), dest.ToString() };
+            return await routeApi.RouteGetAsync(points, pointsEncoded, apiKey, locale, instructions, vehicle, elevation, calcPoints, pointHint, chDisable, weighting, edgeTraversal, algorithm, azimuth, headingPenalty, passThrough, details, roundTripDistance, roundTripSeed, alternativeRouteMaxPaths, alternativeRouteMaxWeightFactor, alternativeRouteMaxShareFactor, avoid?.ToString().ToLower()); ;
         }
 
         public GraphHooperConnectorImpl Algorithem(RoutingAlgorithem algo) {

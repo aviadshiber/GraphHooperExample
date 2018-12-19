@@ -10,8 +10,10 @@ namespace GraphHooperConnector
     public interface IGraphHooperConnector
     {
         Coordinate getCoordiantes(string location);
+        Task<Coordinate> getCoordiantesAsync(string location);
 
         RouteResponse getRouth(Coordinate src, Coordinate dest,int? azimuth =null);
+        Task<RouteResponse> getRouthAsync(Coordinate src, Coordinate dest, int? azimuth = null);
     }
     public class Coordinate {
         public Coordinate() {

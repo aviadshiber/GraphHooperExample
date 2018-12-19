@@ -15,11 +15,11 @@ using IO.Swagger.Model;
 
 namespace grapHooperTry1 {
     public partial class Form1 : Form {
-        private string key = "putKeyHere";
+        private string key = "PUT-API-KEY-HERE";
         private IGraphHooperConnector connector;
         public Form1() {
             InitializeComponent();
-            connector = new GraphHooperConnectorImpl(key);
+            connector = new GraphHooperConnectorImpl(key, "http://localhost:8989/");
 
         }
 
@@ -28,8 +28,8 @@ namespace grapHooperTry1 {
 
         }
 
-        private void GetCorordinatesButton_Click(object sender, EventArgs e) {
-            resultBox.Text = connector.getCoordiantes(destBox.Text).ToString();
+        private async void GetCorordinatesButton_Click(object sender, EventArgs e) {
+            resultBox.Text = (await connector.getCoordiantesAsync(destBox.Text)).ToString();
         }
 
 
@@ -42,7 +42,7 @@ namespace grapHooperTry1 {
             destCoordinatesBox.Text = resultBox.Text;
         }
 
-        private void RouteButton_Click(object sender, EventArgs e) {
+        private async void RouteButton_Click(object sender, EventArgs e) {
             string[] cord1 = srcCoordinatesBox.Text.Split(',');
             string[] cord2 = destCoordinatesBox.Text.Split(',');
             double latCord1, longCord1, latCord2, longCord2;
@@ -53,7 +53,7 @@ namespace grapHooperTry1 {
                  Double.TryParse(cord2[1], out longCord2)) {
                 Coordinate src = new Coordinate(latCord1, longCord1);
                 Coordinate dest = new Coordinate(latCord2, longCord2);
-                RouteResponse result = connector.getRouth(src, dest, 30);
+                RouteResponse result = await connector.getRouthAsync(src, dest, 30);
                 foreach (var instuction in result?.Paths[0].Instructions) {
                     richTextBox1.AppendText($"time:{ instuction.Time} , next step:{instuction.Text}),sign:{instuction.Sign}\n");
                 }
