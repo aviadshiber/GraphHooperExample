@@ -15,11 +15,15 @@ using IO.Swagger.Model;
 
 namespace grapHooperTry1 {
     public partial class Form1 : Form {
-        private string key = "PUT-API-KEY-HERE";
+        
         private IGraphHooperConnector connector;
         public Form1() {
             InitializeComponent();
-            connector = new GraphHooperConnectorImpl(key, "http://localhost:8989/");
+           //set your enviornment variable graph hopper server. for example http://localhost:8989/
+            string serverUrl = Environment.GetEnvironmentVariable("GRAPHHOPPER_SERVER");
+            //set your enviornment variable api key from graphhopper.com
+            string key = Environment.GetEnvironmentVariable("GRAPHHOPPER_API_KEY");
+            connector = new GraphHooperConnectorImpl(key, serverUrl);
 
         }
 
