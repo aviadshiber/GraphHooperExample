@@ -87,12 +87,10 @@ namespace GraphHooperConnector {
             this.roundTripSeed = null;
             this.roundTripDistance = null;
             this.algorithm = algo.getAlgorithemName();
-            if (algo is RoundTrip) {
-                RoundTrip rt = (RoundTrip)algo;
+            if (algo is RoundTrip rt) {
                 this.roundTripSeed = rt.roundTripSeed;
                 this.roundTripDistance = rt.roundTripDistance;
-            } else if (algo is AlternativeRoute) {
-                AlternativeRoute ar = (AlternativeRoute)algo;
+            } else if (algo is AlternativeRoute ar) {
                 this.alternativeRouteMaxPaths = ar.alternativeRouteMaxPaths;
                 this.alternativeRouteMaxShareFactor = ar.alternativeRouteMaxShareFactor;
                 this.alternativeRouteMaxWeightFactor = ar.alternativeRouteMaxWeightFactor;
